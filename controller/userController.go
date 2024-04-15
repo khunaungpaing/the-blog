@@ -16,7 +16,7 @@ import (
 func SignUp(c *gin.Context) {
 	// Get the email/password from the request body
 	var body struct {
-		Name     string `json:"name"`
+		Username string `json:"username"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -40,7 +40,7 @@ func SignUp(c *gin.Context) {
 
 	// Create a new user
 	user := models.User{
-		Name:     body.Name,
+		Username: body.Username,
 		Email:    body.Email,
 		Password: string(hash),
 	}
