@@ -1,25 +1,31 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jinzhu/gorm"
 	"github.com/khunaungpaing/the-blog-api/initializer"
 	"github.com/khunaungpaing/the-blog-api/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// SignUp godoc
+// @Summary Sign up a new user
+// @Description Create a new user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body models.User true "User information"
+// @Success 201 {object} models.User
+// @Failure 400 {object} string
+// @Router /signup [post]
 func SignUp(c *gin.Context) {
 	// Get the email/password from the request body
-	var body struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	var body models.RegisterRequest
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -61,13 +67,20 @@ func SignUp(c *gin.Context) {
 
 }
 
+// Login godoc
+// @Summary Login an existing user
+// @Description Login an existing user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body models.LoginRequest true "User login information"
+// @Success 200 {object} models.User
+// @Failure 401 {object} string
+// @Router /login [post]
 func Login(c *gin.Context) {
-	var body struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-
-	if c.Bind(&body) != nil {
+	// Get the email/password from the request body
+	var body models.LoginRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid request",
 		})
@@ -76,17 +89,21 @@ func Login(c *gin.Context) {
 
 	// look up the requested user
 	var user models.User
-	initializer.DB.First(&user, "email = ?", body.Email)
-
-	if user.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "User not found",
+	if err := initializer.DB.First(&user, "email =?", body.Email).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message": "User not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to retrieve user",
 		})
 		return
 	}
 
 	// Check the password
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)) != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "Invalid password",
 		})
@@ -101,8 +118,6 @@ func Login(c *gin.Context) {
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 
-	fmt.Println(tokenString, err)
-
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "Cannot create token",
@@ -111,14 +126,7 @@ func Login(c *gin.Context) {
 	}
 
 	// send the token
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-
-	c.JSON(http.StatusOK, gin.H{})
-}
-
-func Validate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"message": "You are logged in",
+		"token": tokenString,
 	})
 }

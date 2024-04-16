@@ -4,4 +4,7 @@ run: postgres
 postgres:
 	docker compose up -d
 
-.PHONY: postgres createdb run
+doc:
+	swag init --parseDependency
+
+.PHONY: postgres createdb run doc

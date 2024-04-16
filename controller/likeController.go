@@ -9,6 +9,19 @@ import (
 	"github.com/khunaungpaing/the-blog-api/models"
 )
 
+// LikePost adds a like to a post.
+// @Summary Like a post
+// @Description Like a post
+// @Tags Like
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Authorization header using the Bearer scheme"
+// @Param postId path uint true "Post ID"
+// @Success 201 {string} string "Post liked successfully"
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /likes/{postId} [POST]
 func LikePost(c *gin.Context) {
 	postIdStr := c.Param("postId")
 	postIdUint, err := strconv.ParseUint(postIdStr, 10, 32)
@@ -50,6 +63,19 @@ func LikePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Post liked successfully"})
 }
 
+// UnlikePost removes a like from a post.
+// @Summary Unlike a post
+// @Description Unlike a post
+// @Tags Like
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Authorization header using the Bearer scheme"
+// @Param postId path uint true "Post ID"
+// @Success 200 {string} string "Post unliked successfully"
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /likes/{postId} [DELETE]
 func UnlikePost(c *gin.Context) {
 	postId := c.Param("postId")
 
@@ -74,6 +100,18 @@ func UnlikePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Post unliked successfully"})
 }
 
+// GetLikesForPost retrieves the number of likes for a post.
+// @Summary Get likes for a post
+// @Description Get likes for a post
+// @Tags Like
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Authorization header using the Bearer scheme"
+// @Param postId path uint true "Post ID"
+// @Success 200 {object} gin.H "Likes count"
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /likes/{postId} [GET]
 func GetLikesForPost(c *gin.Context) {
 	postId := c.Param("postId")
 	var likesCount int64

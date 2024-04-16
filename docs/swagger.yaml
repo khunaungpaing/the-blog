@@ -49,6 +49,16 @@ definitions:
         description: Optional
         type: integer
     type: object
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   models.Media:
     properties:
       createdAt:
@@ -140,21 +150,187 @@ definitions:
       updatedAt:
         type: string
     type: object
+  models.User:
+    properties:
+      bio:
+        description: Optional user bio
+        type: string
+      comments:
+        description: Optional, One-to-Many relationship with Comment
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        description: Unique email
+        type: string
+      id:
+        type: integer
+      password:
+        description: Hashed password, excluded from JSON
+        type: string
+      posts:
+        description: One-to-Many relationship with Post
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+      profile_pic:
+        description: Optional profile picture URL
+        type: string
+      updatedAt:
+        type: string
+      username:
+        description: Unique username
+        type: string
+    type: object
 host: localhost:8080
 info:
-  contact: {}
-  description: Your API Description
-  title: the blog api
+  contact:
+    email: <EMAIL>
+    name: API Support
+    url: https://example.com/support
+  description: This is a sample blog API
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://example.com/terms/
+  title: The Blog API
   version: "1.0"
 paths:
-  /posts/:postId:
+  /comments:
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment for a post
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: New Comment object
+        in: body
+        name: newComment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Comment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created comment
+          schema:
+            $ref: '#/definitions/models.Comment'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new comment
+      tags:
+      - Comment
+  /comments/{commentID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a comment by ID
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: commentID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Comment deleted successfully
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Comment not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete a comment
+      tags:
+      - Comment
+    put:
+      consumes:
+      - application/json
+      description: Update a comment by ID
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: commentID
+        required: true
+        type: integer
+      - description: Updated Comment object
+        in: body
+        name: updatedComment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Comment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated comment
+          schema:
+            $ref: '#/definitions/models.Comment'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Comment not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update a comment
+      tags:
+      - Comment
+  /comments/{postId}:
     get:
       consumes:
       - application/json
-      description: Retrieve a post information based on its unique identifier. Requires
-        authentication.
-      operationId: get-post-by-id
+      description: Get comments for a post
       parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: Post ID
         in: path
         name: postId
@@ -164,52 +340,342 @@ paths:
       - application/json
       responses:
         "200":
-          description: ok
+          description: Comments
           schema:
-            $ref: '#/definitions/models.Post'
+            items:
+              $ref: '#/definitions/models.Comment'
+            type: array
+        "400":
+          description: Bad request
+          schema:
+            type: string
         "401":
           description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get comments for a post
+      tags:
+      - Comment
+  /likes/{postId}:
+    delete:
+      consumes:
+      - application/json
+      description: Unlike a post
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post unliked successfully
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Unlike a post
+      tags:
+      - Like
+    get:
+      consumes:
+      - application/json
+      description: Get likes for a post
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Likes count
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get likes for a post
+      tags:
+      - Like
+    post:
+      consumes:
+      - application/json
+      description: Like a post
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Post liked successfully
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Like a post
+      tags:
+      - Like
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Login an existing user
+      parameters:
+      - description: User login information
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Login an existing user
+      tags:
+      - users
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated posts
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated posts
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get paginated posts
+      tags:
+      - Post
+    post:
+      consumes:
+      - application/json
+      description: Create a new post
+      parameters:
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: New Post object
+        in: body
+        name: newPost
+        required: true
+        schema:
+          $ref: '#/definitions/models.Post'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created post
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create a new post
+      tags:
+      - Post
+  /posts/{postId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing post
+      parameters:
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: string
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post deleted successfully
           schema:
             $ref: '#/definitions/gin.H'
         "404":
           description: Post not found
           schema:
             $ref: '#/definitions/gin.H'
-      security:
-      - 'apiKey ':
-        - read
-      summary: Get a post by ID
+        "500":
+          description: Failed to delete post
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: Delete an existing post
       tags:
-      - posts
-  /posts/{postId}/comments:
-    post:
+      - Post
+    put:
       consumes:
       - application/json
-      description: Create a new comment for a post
+      description: Update an existing post
       parameters:
       - description: Post ID
         in: path
         name: postId
         required: true
-        type: integer
-      - description: Comment object
+        type: string
+      - description: Authorization header using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Updated Post object
         in: body
-        name: comment
+        name: updatedPost
         required: true
         schema:
-          $ref: '#/definitions/models.Comment'
+          $ref: '#/definitions/models.Post'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated post
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "404":
+          description: Post not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update an existing post
+      tags:
+      - Post
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: User information
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Comment'
-      security:
-      - JwtAuth: []
-      summary: Create a new comment
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Sign up a new user
       tags:
-      - Comments
-schemes:
-- http
+      - users
 swagger: "2.0"

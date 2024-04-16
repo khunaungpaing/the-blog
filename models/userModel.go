@@ -12,3 +12,14 @@ type User struct {
 	Posts      []Post    `gorm:"foreignKey:UserID"`      // One-to-Many relationship with Post
 	Comments   []Comment `gorm:"foreignKey:UserID"`      // Optional, One-to-Many relationship with Comment
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type RegisterRequest struct {
+	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}

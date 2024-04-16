@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,18 +13,18 @@ import (
 	"github.com/khunaungpaing/the-blog-api/models"
 )
 
+// RequireAuth gets the bearer token from the request header and verifies its validity.
+// If the token is valid, it sets the user information in the context and continues the request.
+// If the token is invalid or missing, it returns an unauthorized status.
 func RequireAuth(c *gin.Context) {
-	// get token
-	tokenString, err := c.Cookie("Authorization")
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-	}
+	// get bearer token
+	authHeader := c.GetHeader("Authorization")
+	tokenString := strings.Split(authHeader, " ")[1]
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")

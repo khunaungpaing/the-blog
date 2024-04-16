@@ -10,6 +10,7 @@ import (
 
 var DB *gorm.DB
 
+// ConnectToDB connects to the database.
 func ConnectToDB() {
 	var err error
 	dsn := os.Getenv("DB")
