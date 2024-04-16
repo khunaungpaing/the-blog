@@ -1,0 +1,215 @@
+basePath: /api/v1
+definitions:
+  gin.H:
+    additionalProperties: {}
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  models.Category:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      posts:
+        description: Optional, Many-to-Many relationship with Post (using a join table)
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  models.Comment:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      post_id:
+        type: integer
+      updatedAt:
+        type: string
+      user_id:
+        description: Optional
+        type: integer
+    type: object
+  models.Media:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      filename:
+        type: string
+      id:
+        type: integer
+      mime_type:
+        description: Media file type (e.g., image/jpeg)
+        type: string
+      path:
+        description: Path to the media file in cloud storage
+        type: string
+      post_id:
+        description: Optional, Foreign Key referencing the Post
+        type: integer
+      updatedAt:
+        type: string
+    type: object
+  models.Post:
+    properties:
+      categories:
+        description: Optional, Many-to-Many relationship with Category (using a join
+          table)
+        items:
+          $ref: '#/definitions/models.Category'
+        type: array
+      comments:
+        description: One-to-Many relationship with Comment
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      content:
+        description: Can include HTML for formatting
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      media:
+        allOf:
+        - $ref: '#/definitions/models.Media'
+        description: Optional, One-to-One or One-to-Many relationship with Media
+      published_at:
+        description: Optional publish timestamp
+        type: string
+      slug:
+        description: Unique URL slug for SEO
+        type: string
+      status:
+        type: string
+      tags:
+        description: Optional, Many-to-Many relationship with Tag (using a join table)
+        items:
+          $ref: '#/definitions/models.Tag'
+        type: array
+      title:
+        type: string
+      updated_at:
+        description: Timestamp of last update
+        type: string
+      updatedAt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.Tag:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      posts:
+        description: Optional, Many-to-Many relationship with Post (using a join table)
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Your API Description
+  title: the blog api
+  version: "1.0"
+paths:
+  /posts/:postId:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a post information based on its unique identifier. Requires
+        authentication.
+      operationId: get-post-by-id
+      parameters:
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/models.Post'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+        "404":
+          description: Post not found
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - 'apiKey ':
+        - read
+      summary: Get a post by ID
+      tags:
+      - posts
+  /posts/{postId}/comments:
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment for a post
+      parameters:
+      - description: Post ID
+        in: path
+        name: postId
+        required: true
+        type: integer
+      - description: Comment object
+        in: body
+        name: comment
+        required: true
+        schema:
+          $ref: '#/definitions/models.Comment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Comment'
+      security:
+      - JwtAuth: []
+      summary: Create a new comment
+      tags:
+      - Comments
+schemes:
+- http
+swagger: "2.0"

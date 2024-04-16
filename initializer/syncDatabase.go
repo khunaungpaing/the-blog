@@ -9,7 +9,6 @@ func SyncDataBase() {
 		&models.Comment{},
 		&models.Like{},
 		&models.Tag{},
-		&models.PostRevision{},
 		&models.Media{},
 		&models.Category{},
 	)
