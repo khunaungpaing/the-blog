@@ -1,5 +1,3 @@
-Sure, here's an example of how you can add documentation to your Git repository's README file:
-
 # The Blog API
 
 The Blog API is a robust and efficient solution for managing a blog platform. Developed using Golang and Gin, it embodies modern practices and technologies for seamless performance and scalability. Leveraging PostgreSQL as its database engine ensures reliability and flexibility in data management, while JWT (JSON Web Tokens) authentication enhances security by providing a stateless authentication mechanism.
