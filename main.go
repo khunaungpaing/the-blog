@@ -19,12 +19,10 @@ func init() {
 // main is the entry point of the application
 // @title The Blog API
 // @version 1.0
-// @description This is a sample blog API
-// @termsOfService https://example.com/terms/
+// @description The Blog API is a robust and efficient solution for managing a blog platform. Developed using Golang and Gin, it embodies modern practices and technologies for seamless performance and scalability. Leveraging PostgreSQL as its database engine ensures reliability and flexibility in data management, while JWT (JSON Web Tokens) authentication enhances security by providing a stateless authentication mechanism. \n\nThis API serves as a foundational component for building and managing a dynamic blogging platform, offering a comprehensive set of endpoints for user authentication, post management, comment handling, user profile management, and more. With clear and concise documentation and a user-friendly architecture, integrating this API into your project is straightforward and hassle-free.\n\nWhether you're developing a personal blog, a collaborative writing platform, or an enterprise-level content management system, The Blog API provides the necessary tools and functionality to streamline your development process and deliver a seamless user experience. Unlock the power of modern web development with The Blog API.
 
 // @contact.name API Support
-// @contact.url https://example.com/support
-// @contact.email <EMAIL>
+// @contact.email khunaungpaing.it.tumlm@gmail.com
 
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
@@ -47,9 +45,9 @@ func main() {
 		// Create a new post
 		post.POST("/", middleware.RequireAuth, controller.CreatePost)
 		// Get all the posts
-		post.GET("/", middleware.RequireAuth, controller.GetPosts)
+		post.GET("/", controller.GetPosts)
 		// Get a specific post
-		post.GET("/:postId", middleware.RequireAuth, controller.GetPost)
+		post.GET("/:postId", controller.GetPost)
 		// Delete a specific post
 		post.DELETE("/:postId", middleware.RequireAuth, controller.DeletePost)
 		// Update a specific post
@@ -57,33 +55,29 @@ func main() {
 	}
 
 	// Initialize the comments endpoint for a specific post
-	cmt := post.Group("/:postId/comments")
+	postIdRoute := post.Group("/:postId")
 	{
 		// Create a new comment for a specific post
-		cmt.POST("/", middleware.RequireAuth, controller.CreateComment)
+		postIdRoute.POST("/comments", middleware.RequireAuth, controller.CreateComment)
 		// Get all the comments for a specific post
-		cmt.GET("/", middleware.RequireAuth, controller.GetCommentsForPost)
+		postIdRoute.GET("/comments", middleware.RequireAuth, controller.GetCommentsForPost)
 		// Delete a specific comment for a specific post
-		cmt.DELETE("/:commentId", middleware.RequireAuth, controller.DeleteComment)
+		postIdRoute.DELETE("/comments/:commentId", middleware.RequireAuth, controller.DeleteComment)
 		// Update a specific comment for a specific post
-		cmt.PUT("/:commentId", middleware.RequireAuth, controller.UpdateComment)
-	}
+		postIdRoute.PUT("/comments/:commentId", middleware.RequireAuth, controller.UpdateComment)
 
-	// Initialize the likes endpoint for a specific post
-	like := post.Group("/:postId/likes")
-	{
-		// Like a specific post
-		like.POST("/", middleware.RequireAuth, controller.LikePost)
+		// Like the comments endpoint
+		postIdRoute.POST("/likes", middleware.RequireAuth, controller.LikePost)
 		// Get all the likes for a specific post
-		like.GET("/", middleware.RequireAuth, controller.GetLikesForPost)
+		postIdRoute.GET("/likes", middleware.RequireAuth, controller.GetLikesForPost)
 		// Unlike a specific post
-		like.DELETE("/", middleware.RequireAuth, controller.UnlikePost)
+		postIdRoute.DELETE("/likes", middleware.RequireAuth, controller.UnlikePost)
 	}
 
-	// Initialize the sign up endpoint
-	v1.POST("/signup", controller.SignUp)
-	// Initialize the sign in endpoint
-	v1.POST("/login", controller.Login)
+	v1.POST("/users/signup", controller.SignUp)
+	v1.POST("/users/login", controller.Login)
+	v1.GET("/users/profile", middleware.RequireAuth, controller.GetUserProfile)
+	v1.PUT("/users", middleware.RequireAuth, controller.UpdateUserProfile)
 
 	// Set the trusted proxies
 	r.SetTrustedProxies([]string{"127.0.0.1"})

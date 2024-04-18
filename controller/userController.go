@@ -59,11 +59,9 @@ func SignUp(c *gin.Context) {
 		})
 		return
 	}
-
+	user.Password = ""
 	// Return the user
-	c.JSON(http.StatusCreated, gin.H{
-		"user": user,
-	})
+	c.JSON(http.StatusCreated, user)
 
 }
 
@@ -129,4 +127,27 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenString,
 	})
+}
+
+// get User Profile
+func GetUserProfile(c *gin.Context) {
+	// Get the user from context
+	user, exist := c.Get("user")
+	if !exist {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found in context"})
+		return
+	}
+	userModel, ok := user.(models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user from context"})
+		return
+	}
+
+	// Response user
+	userModel.Password = ""
+	c.JSON(http.StatusOK, userModel)
+}
+
+func UpdateUserProfile(c *gin.Context) {
+
 }

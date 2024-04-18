@@ -21,7 +21,7 @@ import (
 // @Failure 400 {string} string "Bad request"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal server error"
-// @Router /likes/{postId} [POST]
+// @Router /posts/{postId}/likes [POST]
 func LikePost(c *gin.Context) {
 	postIdStr := c.Param("postId")
 	postIdUint, err := strconv.ParseUint(postIdStr, 10, 32)
@@ -75,7 +75,7 @@ func LikePost(c *gin.Context) {
 // @Failure 400 {string} string "Bad request"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal server error"
-// @Router /likes/{postId} [DELETE]
+// @Router /posts/{postId}/likes [DELETE]
 func UnlikePost(c *gin.Context) {
 	postId := c.Param("postId")
 
@@ -111,7 +111,7 @@ func UnlikePost(c *gin.Context) {
 // @Success 200 {object} gin.H "Likes count"
 // @Failure 400 {string} string "Bad request"
 // @Failure 500 {string} string "Internal server error"
-// @Router /likes/{postId} [GET]
+// @Router /posts/{postId}/likes [GET]
 func GetLikesForPost(c *gin.Context) {
 	postId := c.Param("postId")
 	var likesCount int64

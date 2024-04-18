@@ -5,27 +5,25 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/khunaungpaing/the-blog-api/dto"
 	"github.com/khunaungpaing/the-blog-api/initializer"
 	"github.com/khunaungpaing/the-blog-api/models"
 )
 
-type RequestComment struct {
-	Content string `json:"content"`
-}
-
 // CreateComment creates a new comment for a specific post.
 // @Summary Create a new comment
-// @Description Create a new comment for the specified post
+// @Description Create a new comment for the specified post.
 // @Tags comments
 // @Accept json
 // @Produce json
-// @Param postId path int true "Post ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param comment body RequestComment true "Comment object"
-// @Success 201 {object} models.Comment
-// @Failure 400 {object} gin.H
-// @Failure 401 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param postId path int true "ID of the post to which the comment will be added"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Param comment body dto.RequestComment true "Comment object containing content"
+// @Success 201 {object} models.Comment "Successfully created comment"
+// @Failure 400 {object} gin.H "Bad request, invalid postId or request body"
+// @Failure 401 {object} gin.H "Unauthorized access, missing or invalid token"
+// @Failure 404 {object} gin.H "Post not found"
+// @Failure 500 {object} gin.H "Internal server error"
 // @Router /posts/{postId}/comments [post]
 func CreateComment(c *gin.Context) {
 	postIdStr := c.Param("postId")
@@ -37,7 +35,7 @@ func CreateComment(c *gin.Context) {
 	}
 	postId := uint(postIdUint)
 
-	var requestCmt RequestComment
+	var requestCmt dto.RequestComment
 	if err := c.ShouldBindJSON(&requestCmt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
@@ -75,14 +73,14 @@ func CreateComment(c *gin.Context) {
 
 // GetCommentsForPost retrieves comments for a specific post.
 // @Summary Get comments for a post
-// @Description Retrieves comments for the specified post
+// @Description Retrieves comments for the specified post.
 // @Tags comments
 // @Accept json
 // @Produce json
-// @Param postId path int true "Post ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Success 200 {array} models.Comment
-// @Failure 500 {object} gin.H
+// @Param postId path int true "ID of the post"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Success 200 {array} models.Comment "Successfully retrieved comments"
+// @Failure 500 {object} gin.H "Internal server error"
 // @Router /posts/{postId}/comments [get]
 func GetCommentsForPost(c *gin.Context) {
 	postId := c.Param("postId")
@@ -96,14 +94,14 @@ func GetCommentsForPost(c *gin.Context) {
 
 // DeleteComment deletes a specific comment.
 // @Summary Delete a comment
-// @Description Deletes the specified comment
+// @Description Deletes the specified comment.
 // @Tags comments
 // @Accept json
 // @Produce json
-// @Param commentId path int true "Comment ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Success 200 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param commentId path int true "ID of the comment"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Success 200 {object} gin.H "Successfully deleted comment"
+// @Failure 500 {object} gin.H "Internal server error"
 // @Router /posts/{postId}/comments/{commentId} [delete]
 func DeleteComment(c *gin.Context) {
 	commentID := c.Param("commentId")
@@ -118,21 +116,21 @@ func DeleteComment(c *gin.Context) {
 
 // UpdateComment updates a specific comment.
 // @Summary Update a comment
-// @Description Updates the specified comment
+// @Description Updates the specified comment.
 // @Tags comments
 // @Accept json
 // @Produce json
-// @Param postId path int true "Post ID"
-// @Param commentId path int true "Comment ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param comment body RequestComment true "Updated comment object"
-// @Success 200 {object} models.Comment
-// @Failure 400 {object} gin.H
-// @Failure 404 {object} gin.H
-// @Failure 500 {object} gin.H
+// @Param postId path int true "ID of the post"
+// @Param commentId path int true "ID of the comment"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Param comment body dto.RequestComment true "Updated comment object"
+// @Success 200 {object} models.Comment "Successfully updated comment"
+// @Failure 400 {object} gin.H "Bad request, invalid request body"
+// @Failure 404 {object} gin.H "Comment not found"
+// @Failure 500 {object} gin.H "Internal server error"
 // @Router /posts/{postId}/comments/{commentId} [put]
 func UpdateComment(c *gin.Context) {
-	var requestCmt RequestComment
+	var requestCmt dto.RequestComment
 	var updatedComment models.Comment
 	commentID := c.Param("commentId")
 

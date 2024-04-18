@@ -9,11 +9,9 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "https://example.com/terms/",
         "contact": {
             "name": "API Support",
-            "url": "https://example.com/support",
-            "email": "\u003cEMAIL\u003e"
+            "email": "khunaungpaing.it.tumlm@gmail.com"
         },
         "license": {
             "name": "Apache 2.0",
@@ -24,9 +22,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/comments": {
+        "/login": {
             "post": {
-                "description": "Create a new comment for a post",
+                "description": "Login an existing user",
                 "consumes": [
                     "application/json"
                 ],
@@ -34,38 +32,25 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comment"
+                    "users"
                 ],
-                "summary": "Create a new comment",
+                "summary": "Login an existing user",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "New Comment object",
-                        "name": "newComment",
+                        "description": "User login information",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Comment"
+                            "$ref": "#/definitions/models.LoginRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created comment",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Comment"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.User"
                         }
                     },
                     "401": {
@@ -73,19 +58,13 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
                     }
                 }
             }
         },
-        "/comments/{commentID}": {
-            "put": {
-                "description": "Update a comment by ID",
+        "/posts": {
+            "get": {
+                "description": "Retrieve a list of posts with pagination support.",
                 "consumes": [
                     "application/json"
                 ],
@@ -93,63 +72,40 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comment"
+                    "posts"
                 ],
-                "summary": "Update a comment",
+                "summary": "Retrieve a list of posts",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Comment ID",
-                        "name": "commentID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated Comment object",
-                        "name": "updatedComment",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Comment"
-                        }
+                        "description": "Number of items per page (default: 10)",
+                        "name": "pageSize",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Updated comment",
+                        "description": "List of posts",
                         "schema": {
-                            "$ref": "#/definitions/models.Comment"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Comment not found",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
             },
-            "delete": {
-                "description": "Delete a comment by ID",
+            "post": {
+                "description": "Create a new post with the provided data.",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,56 +113,58 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comment"
+                    "posts"
                 ],
-                "summary": "Delete a comment",
+                "summary": "Create a new post",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
+                        "description": "Authorization token using the Bearer scheme",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "description": "Comment ID",
-                        "name": "commentID",
-                        "in": "path",
-                        "required": true
+                        "description": "Post data",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestPost"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Comment deleted successfully",
+                    "201": {
+                        "description": "Successfully created post",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.Post"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad request, invalid request body",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     },
-                    "404": {
-                        "description": "Comment not found",
+                    "401": {
+                        "description": "Unauthorized access, missing or invalid token",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
             }
         },
-        "/comments/{postId}": {
+        "/posts/{postId}": {
             "get": {
-                "description": "Get comments for a post",
+                "description": "Retrieve a specific post by its ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -214,17 +172,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comment"
+                    "posts"
                 ],
-                "summary": "Get comments for a post",
+                "summary": "Retrieve a specific post",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "integer",
                         "description": "Post ID",
@@ -235,7 +186,189 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Comments",
+                        "description": "Found post",
+                        "schema": {
+                            "$ref": "#/definitions/models.Post"
+                        }
+                    },
+                    "404": {
+                        "description": "Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing post with the provided data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Update a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated post data",
+                        "name": "post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestPost"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request, invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access, missing or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden, user is not authorized to update this post",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "404": {
+                        "description": "Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a specific post by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Delete a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized access, missing or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden, user is not authorized to delete this post",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "404": {
+                        "description": "Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postId}/comments": {
+            "get": {
+                "description": "Retrieves comments for the specified post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Get comments for a post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the post",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved comments",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -243,28 +376,202 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad request",
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new comment for the specified post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Create a new comment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the post to which the comment will be added",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Comment object containing content",
+                        "name": "comment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestComment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.Comment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request, invalid postId or request body",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized access, missing or invalid token",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "404": {
+                        "description": "Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/gin.H"
                         }
                     }
                 }
             }
         },
-        "/likes/{postId}": {
+        "/posts/{postId}/comments/{commentId}": {
+            "put": {
+                "description": "Updates the specified comment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Update a comment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the post",
+                        "name": "postId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the comment",
+                        "name": "commentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated comment object",
+                        "name": "comment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestComment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.Comment"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request, invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "404": {
+                        "description": "Comment not found",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes the specified comment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Delete a comment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the comment",
+                        "name": "commentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization token using the Bearer scheme",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted comment",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/posts/{postId}/likes": {
             "get": {
                 "description": "Get likes for a post",
                 "consumes": [
@@ -425,282 +732,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/login": {
-            "post": {
-                "description": "Login an existing user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Login an existing user",
-                "parameters": [
-                    {
-                        "description": "User login information",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/posts": {
-            "get": {
-                "description": "Get paginated posts",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Post"
-                ],
-                "summary": "Get paginated posts",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Page size",
-                        "name": "pageSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Paginated posts",
-                        "schema": {
-                            "$ref": "#/definitions/models.Post"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new post",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Post"
-                ],
-                "summary": "Create a new post",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "New Post object",
-                        "name": "newPost",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Post"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created post",
-                        "schema": {
-                            "$ref": "#/definitions/models.Post"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/posts/{postId}": {
-            "put": {
-                "description": "Update an existing post",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Post"
-                ],
-                "summary": "Update an existing post",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Post ID",
-                        "name": "postId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated Post object",
-                        "name": "updatedPost",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Post"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Updated post",
-                        "schema": {
-                            "$ref": "#/definitions/models.Post"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "Post not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete an existing post",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Post"
-                ],
-                "summary": "Delete an existing post",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Post ID",
-                        "name": "postId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Authorization header using the Bearer scheme",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Post deleted successfully",
-                        "schema": {
-                            "$ref": "#/definitions/gin.H"
-                        }
-                    },
-                    "404": {
-                        "description": "Post not found",
-                        "schema": {
-                            "$ref": "#/definitions/gin.H"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete post",
-                        "schema": {
-                            "$ref": "#/definitions/gin.H"
-                        }
-                    }
-                }
-            }
-        },
         "/signup": {
             "post": {
                 "description": "Create a new user",
@@ -743,6 +774,94 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.RequestCategory": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RequestComment": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RequestMedia": {
+            "type": "object",
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RequestPost": {
+            "type": "object",
+            "properties": {
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RequestCategory"
+                    }
+                },
+                "content": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "media": {
+                    "$ref": "#/definitions/dto.RequestMedia"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RequestTag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RequestTag": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "gin.H": {
             "type": "object",
             "additionalProperties": {}
@@ -901,10 +1020,6 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "published_at": {
-                    "description": "Optional publish timestamp",
-                    "type": "string"
-                },
                 "slug": {
                     "description": "Unique URL slug for SEO",
                     "type": "string"
@@ -923,10 +1038,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updatedAt": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "description": "Timestamp of last update",
                     "type": "string"
                 },
                 "user_id": {
@@ -1025,7 +1136,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "The Blog API",
-	Description:      "This is a sample blog API",
+	Description:      "The Blog API is a robust and efficient solution for managing a blog platform. Developed using Golang and Gin, it embodies modern practices and technologies for seamless performance and scalability. Leveraging PostgreSQL as its database engine ensures reliability and flexibility in data management, while JWT (JSON Web Tokens) authentication enhances security by providing a stateless authentication mechanism. \\n\\nThis API serves as a foundational component for building and managing a dynamic blogging platform, offering a comprehensive set of endpoints for user authentication, post management, comment handling, user profile management, and more. With clear and concise documentation and a user-friendly architecture, integrating this API into your project is straightforward and hassle-free.\\n\\nWhether you're developing a personal blog, a collaborative writing platform, or an enterprise-level content management system, The Blog API provides the necessary tools and functionality to streamline your development process and deliver a seamless user experience. Unlock the power of modern web development with The Blog API.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

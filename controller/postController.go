@@ -5,27 +5,28 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/khunaungpaing/the-blog-api/dto"
 	"github.com/khunaungpaing/the-blog-api/initializer"
 	"github.com/khunaungpaing/the-blog-api/models"
 )
 
 // CreatePost creates a new post.
 // @Summary Create a new post
-// @Description Create a new post
-// @Tags Post
+// @Description Create a new post with the provided data.
+// @Tags posts
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param newPost body models.Post true "New Post object"
-// @Success 201 {object} models.Post "Created post"
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
-// @Failure 500 {string} string "Internal server error"
-// @Router /posts [POST]
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Param post body dto.RequestPost true "Post data"
+// @Success 201 {object} models.Post "Successfully created post"
+// @Failure 400 {object} gin.H "Bad request, invalid request body"
+// @Failure 401 {object} gin.H "Unauthorized access, missing or invalid token"
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /posts [post]
 func CreatePost(c *gin.Context) {
 	// 1. Bind incoming JSON data to a Post struct
-	var newPost models.Post
-	if err := c.ShouldBindJSON(&newPost); err != nil {
+	var requestPost dto.RequestPost
+	if err := c.ShouldBindJSON(&requestPost); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -44,55 +45,54 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	// Assign UserID to the new post
+	// 3. Assign UserID to the new post
+	var newPost models.Post
+	newPost = requestPost.ToModel(newPost)
 	newPost.UserID = userModel.ID
+	newPost.User = nil
 
-	// 3. Save the Post struct
+	// 4. Save the Post struct
 	if err := initializer.DB.Create(&newPost).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create post", "details": err.Error()})
 		return
 	}
 
-	// 4. Return the created Post struct
+	// 5. Return the created Post struct
 	c.JSON(http.StatusCreated, newPost)
 }
 
-// GetPost retrieves a single post.
-//
-// @Summary Get a single post
-// @Description Get a single post
-// @Tags Post
+// GetPost retrieves a specific post by ID.
+// @Summary Retrieve a specific post
+// @Description Retrieve a specific post by its ID.
+// @Tags posts
 // @Accept json
 // @Produce json
-// @Param postId path string true "Post ID"
-// @Success 200 {object} models.Post "Post"
-// @Failure 404 {string} string "Post not found"
-// @Failure 500 {string} string "Internal server error"
-// @Router /posts/{postId} [GET]
+// @Param postId path int true "Post ID"
+// @Success 200 {object} models.Post "Found post"
+// @Failure 404 {object} gin.H "Post not found"
+// @Router /posts/{postId} [get]
 func GetPost(c *gin.Context) {
 	var post models.Post
 	id := c.Param("postId")
-	if err := initializer.DB.First(&post, id).Error; err != nil {
+	if err := initializer.DB.Preload("Categories").Preload("Tags").Preload("Comments").Preload("Media").Preload("User").First(&post, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
+	post.User.Password = ""
 	c.JSON(http.StatusOK, post)
 }
 
-// GetPosts retrieves paginated posts.
-//
-// @Summary Get paginated posts
-// @Description Get paginated posts
-// @Tags Post
+// GetPosts retrieves a list of posts with pagination.
+// @Summary Retrieve a list of posts
+// @Description Retrieve a list of posts with pagination support.
+// @Tags posts
 // @Accept json
 // @Produce json
-// @Param page query int false "Page number" default(1)
-// @Param pageSize query int false "Page size" default(10)
-// @Success 200 {object} models.Post "Paginated posts"
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
-// @Failure 500 {string} string "Internal server error"
-// @Router /posts [GET]
+// @Param page query int false "Page number (default: 1)"
+// @Param pageSize query int false "Number of items per page (default: 10)"
+// @Success 200 {object} gin.H "List of posts"
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /posts [get]
 func GetPosts(c *gin.Context) {
 	// Parse query parameters for pagination
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -107,18 +107,20 @@ func GetPosts(c *gin.Context) {
 	// Calculate offset
 	offset := (page - 1) * pageSize
 
-	// Fetch paginated posts
+	// Fetch paginated posts with preloaded associations
 	var posts []models.Post
 	var totalPostsCount int64
 	if err := initializer.DB.Model(&models.Post{}).Count(&totalPostsCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total posts count"})
 		return
 	}
-	if err := initializer.DB.Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
+	if err := initializer.DB.Preload("Categories").Preload("Tags").Preload("Comments").Preload("Media").Preload("User").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch posts"})
 		return
 	}
-
+	for _, post := range posts {
+		post.User.Password = ""
+	}
 	// Prepare response with pagination metadata
 	response := gin.H{
 		"posts":       posts,
@@ -131,34 +133,35 @@ func GetPosts(c *gin.Context) {
 }
 
 // UpdatePost updates an existing post.
-// @Summary Update an existing post
-// @Description Update an existing post
-// @Tags Post
+// @Summary Update a post
+// @Description Update an existing post with the provided data.
+// @Tags posts
 // @Accept json
 // @Produce json
-// @Param postId path string true "Post ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param updatedPost body models.Post true "Updated Post object"
-// @Success 200 {object} models.Post "Updated post"
-// @Failure 400 {string} string "Bad request"
-// @Failure 404 {string} string "Post not found"
-// @Failure 403 {string} string "User is not authorized to update this post"
-// @Failure 500 {string} string "Internal server error"
-// @Router /posts/{postId} [PUT]
+// @Param postId path int true "Post ID"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Param post body dto.RequestPost true "Updated post data"
+// @Success 200 {object} gin.H "Post updated successfully"
+// @Failure 400 {object} gin.H "Bad request, invalid request body"
+// @Failure 401 {object} gin.H "Unauthorized access, missing or invalid token"
+// @Failure 403 {object} gin.H "Forbidden, user is not authorized to update this post"
+// @Failure 404 {object} gin.H "Post not found"
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /posts/{postId} [put]
 func UpdatePost(c *gin.Context) {
 	// Get the post ID from the URL parameter
 	id := c.Param("postId")
 
 	// Bind the incoming JSON data to the Post struct
-	var updatedPost models.Post
-	if err := c.ShouldBindJSON(&updatedPost); err != nil {
+	var requestPost dto.RequestPost
+	if err := c.ShouldBindJSON(&requestPost); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
 	// Check if the post exists
 	var post models.Post
-	if err := initializer.DB.First(&post, id).Error; err != nil {
+	if err := initializer.DB.Preload("Categories").Preload("Tags").Preload("Comments").Preload("Media").First(&post, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
 		return
 	}
@@ -182,9 +185,7 @@ func UpdatePost(c *gin.Context) {
 	}
 
 	// Update only the fields that are allowed to be updated
-	post.Title = updatedPost.Title
-	post.Content = updatedPost.Content
-	post.Status = updatedPost.Status
+	post = requestPost.ToModel(post)
 
 	// Save the updated post
 	if err := initializer.DB.Save(&post).Error; err != nil {
@@ -193,22 +194,26 @@ func UpdatePost(c *gin.Context) {
 	}
 
 	// Return the updated post
-	c.JSON(http.StatusOK, post)
+	c.JSON(http.StatusOK, gin.H{
+		"post":    post,
+		"updated": requestPost,
+	})
 }
 
-// DeletePost deletes an existing post.
-// @Summary Delete an existing post
-// @Description Delete an existing post
-// @Tags Post
+// DeletePost deletes a specific post by ID.
+// @Summary Delete a post
+// @Description Delete a specific post by its ID.
+// @Tags posts
 // @Accept json
 // @Produce json
-// @Param postId path string true "Post ID"
-// @Param Authorization header string true "Authorization header using the Bearer scheme"
+// @Param postId path int true "Post ID"
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
 // @Success 200 {object} gin.H "Post deleted successfully"
+// @Failure 401 {object} gin.H "Unauthorized access, missing or invalid token"
+// @Failure 403 {object} gin.H "Forbidden, user is not authorized to delete this post"
 // @Failure 404 {object} gin.H "Post not found"
-// @Failure 403 {object} gin.H "User is not authorized to delete this post"
-// @Failure 500 {object} gin.H "Failed to delete post"
-// @Router /posts/{postId} [DELETE]
+// @Failure 500 {object} gin.H "Internal server error"
+// @Router /posts/{postId} [delete]
 func DeletePost(c *gin.Context) {
 	var post models.Post
 	id := c.Param("postId")
