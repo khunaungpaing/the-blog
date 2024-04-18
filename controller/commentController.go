@@ -9,19 +9,24 @@ import (
 	"github.com/khunaungpaing/the-blog-api/models"
 )
 
-// CreateComment creates a new comment for a post.
+type RequestComment struct {
+	Content string `json:"content"`
+}
+
+// CreateComment creates a new comment for a specific post.
 // @Summary Create a new comment
-// @Description Create a new comment for a post
-// @Tags Comment
+// @Description Create a new comment for the specified post
+// @Tags comments
 // @Accept json
 // @Produce json
+// @Param postId path int true "Post ID"
 // @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param newComment body models.Comment true "New Comment object"
-// @Success 201 {object} models.Comment "Created comment"
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
-// @Failure 500 {string} string "Internal server error"
-// @Router /comments [POST]
+// @Param comment body RequestComment true "Comment object"
+// @Success 201 {object} models.Comment
+// @Failure 400 {object} gin.H
+// @Failure 401 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Router /posts/{postId}/comments [post]
 func CreateComment(c *gin.Context) {
 	postIdStr := c.Param("postId")
 	postIdUint, err := strconv.ParseUint(postIdStr, 10, 32)
@@ -32,8 +37,8 @@ func CreateComment(c *gin.Context) {
 	}
 	postId := uint(postIdUint)
 
-	var newComment models.Comment
-	if err := c.ShouldBindJSON(&newComment); err != nil {
+	var requestCmt RequestComment
+	if err := c.ShouldBindJSON(&requestCmt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
@@ -49,16 +54,16 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
+	var newComment models.Comment
 	newComment.PostID = postId
+	newComment.Content = requestCmt.Content
+	newComment.UserID = userModel.ID
 
-	// Check if the post exists
 	var post models.Post
 	if err := initializer.DB.First(&post, newComment.PostID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post_id"})
 		return
 	}
-
-	newComment.UserID = userModel.ID
 
 	if err := initializer.DB.Create(&newComment).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create comment"})
@@ -68,19 +73,17 @@ func CreateComment(c *gin.Context) {
 	c.JSON(http.StatusCreated, newComment)
 }
 
-// GetCommentsForPost retrieves comments for a post.
+// GetCommentsForPost retrieves comments for a specific post.
 // @Summary Get comments for a post
-// @Description Get comments for a post
-// @Tags Comment
+// @Description Retrieves comments for the specified post
+// @Tags comments
 // @Accept json
 // @Produce json
+// @Param postId path int true "Post ID"
 // @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param postId path uint true "Post ID"
-// @Success 200 {array} models.Comment "Comments"
-// @Failure 400 {string} string "Bad request"
-// @Failure 401 {string} string "Unauthorized"
-// @Failure 500 {string} string "Internal server error"
-// @Router /comments/{postId} [GET]
+// @Success 200 {array} models.Comment
+// @Failure 500 {object} gin.H
+// @Router /posts/{postId}/comments [get]
 func GetCommentsForPost(c *gin.Context) {
 	postId := c.Param("postId")
 	var comments []models.Comment
@@ -91,21 +94,19 @@ func GetCommentsForPost(c *gin.Context) {
 	c.JSON(http.StatusOK, comments)
 }
 
-// DeleteComment deletes a comment by ID.
+// DeleteComment deletes a specific comment.
 // @Summary Delete a comment
-// @Description Delete a comment by ID
-// @Tags Comment
+// @Description Deletes the specified comment
+// @Tags comments
 // @Accept json
 // @Produce json
+// @Param commentId path int true "Comment ID"
 // @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param commentID path uint true "Comment ID"
-// @Success 200 {string} string "Comment deleted successfully"
-// @Failure 400 {string} string "Bad request"
-// @Failure 404 {string} string "Comment not found"
-// @Failure 500 {string} string "Internal server error"
-// @Router /comments/{commentID} [DELETE]
+// @Success 200 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Router /posts/{postId}/comments/{commentId} [delete]
 func DeleteComment(c *gin.Context) {
-	commentID := c.Param("commentID")
+	commentID := c.Param("commentId")
 
 	if err := initializer.DB.Where("id = ?", commentID).Delete(&models.Comment{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete comment"})
@@ -115,33 +116,36 @@ func DeleteComment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})
 }
 
-// UpdateComment updates a comment by ID.
+// UpdateComment updates a specific comment.
 // @Summary Update a comment
-// @Description Update a comment by ID
-// @Tags Comment
+// @Description Updates the specified comment
+// @Tags comments
 // @Accept json
 // @Produce json
+// @Param postId path int true "Post ID"
+// @Param commentId path int true "Comment ID"
 // @Param Authorization header string true "Authorization header using the Bearer scheme"
-// @Param commentID path uint true "Comment ID"
-// @Param updatedComment body models.Comment true "Updated Comment object"
-// @Success 200 {object} models.Comment "Updated comment"
-// @Failure 400 {string} string "Bad request"
-// @Failure 404 {string} string "Comment not found"
-// @Failure 500 {string} string "Internal server error"
-// @Router /comments/{commentID} [PUT]
+// @Param comment body RequestComment true "Updated comment object"
+// @Success 200 {object} models.Comment
+// @Failure 400 {object} gin.H
+// @Failure 404 {object} gin.H
+// @Failure 500 {object} gin.H
+// @Router /posts/{postId}/comments/{commentId} [put]
 func UpdateComment(c *gin.Context) {
+	var requestCmt RequestComment
 	var updatedComment models.Comment
-	commentID := c.Param("commentID")
+	commentID := c.Param("commentId")
 
 	if err := initializer.DB.First(&updatedComment, commentID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Comment not found"})
 		return
 	}
 
-	if err := c.ShouldBindJSON(&updatedComment); err != nil {
+	if err := c.ShouldBindJSON(&requestCmt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+	updatedComment.Content = requestCmt.Content
 
 	if err := initializer.DB.Save(&updatedComment).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update comment"})
