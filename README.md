@@ -19,30 +19,36 @@ Whether you're developing a personal blog, a collaborative writing platform, or 
 git clone https://github.com/khunaungpaing/the-blog-api.git
 ```
 
-2. Install dependencies:
+2. Navigate to the project directory:
 
 ```bash
 cd the-blog-api
-go mod download
 ```
 
-3. Create a.env file and set the required environment variables:
+3. Ensure that PostgreSQL is running:
 
 ```bash
-cp.env.example.env
+make postgres
 ```
 
-4. Run the migrations to create the database tables:
+4. Initialize Swagger documentation:
+```bash
+make doc
+```
+
+5. Compile and run the application using the Makefile:
 
 ```bash
-go run main.go migrate
+make run
 ```
+6. Visit the API documentation at http://localhost:8080/swagger/index.html.
 
-5. Start the server:
+Note: You may need to adjust the PORT configuration in your main.go file if your server runs on a different port.
 
-```bash
-go run main.go
-```
+## Makefile Commands
+1. `make run`: Compile and run the application.
+2. `make postgres`: Start PostgreSQL database using Docker Compose.
+3. `make doc`: Initialize Swagger documentation.
 
 ## Endpoints
 
@@ -50,8 +56,8 @@ go run main.go
 
 | Method | Endpoint               | Description                                                                  |
 | ------ | ---------------------- | ---------------------------------------------------------------------------- |
-| POST   | /signup                | Sign up a new user                                                           |
-| POST   | /login                 | Login an existing user                                                      |
+| POST   | /users/signup          | Sign up a new user                                                           |
+| POST   | /users/login           | Login an existing user                                                      |
 
 ### Posts
 
@@ -69,15 +75,6 @@ go run main.go
 | GET    | /posts/:postId/likes    | Get all the likes for a specific post                                        |
 | POST   | /posts/:postId/likes    | Like a specific post                                                        |
 | DELETE | /posts/:postId/likes    | Unlike a specific post                                                      |
-
-### Users
-
-| Method | Endpoint               | Description                                                                  |
-| ------ | ---------------------- | ---------------------------------------------------------------------------- |
-| GET    | /users                 | Get all the users                                                           |
-| GET    | /users/:userId         | Get a specific user                                                         |
-| DELETE | /users/:userId         | Delete a specific user                                                      |
-| PUT    | /users/:userId         | Update a specific user                                                      |
 
 ## License
 
