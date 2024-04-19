@@ -67,11 +67,11 @@ Note: You may need to adjust the PORT configuration in your `.env` file if your 
 | GET    | /posts                 | Get all the posts                                                           |
 | GET    | /posts/:postId         | Get a specific post                                                         |
 | DELETE | /posts/:postId         | Delete a specific post                                                      |
-| PUT    | /posts/:postId         | Update a specific post                                                      |
+| PATCH  | /posts/:postId         | Update a specific post                                                      |
 | GET    | /posts/:postId/comments | Get all the comments for a specific post                                     |
 | POST   | /posts/:postId/comments | Create a new comment for a specific post                                     |
 | DELETE | /posts/:postId/comments/:commentId | Delete a specific comment for a specific post                              |
-| PUT    | /posts/:postId/comments/:commentId | Update a specific comment for a specific post                              |
+| PATCH  | /posts/:postId/comments/:commentId | Update a specific comment for a specific post                              |
 | GET    | /posts/:postId/likes    | Get all the likes for a specific post                                        |
 | POST   | /posts/:postId/likes    | Like a specific post                                                        |
 | DELETE | /posts/:postId/likes    | Unlike a specific post                                                      |
