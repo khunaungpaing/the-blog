@@ -76,6 +76,13 @@ Note: You may need to adjust the PORT configuration in your main.go file if your
 | POST   | /posts/:postId/likes    | Like a specific post                                                        |
 | DELETE | /posts/:postId/likes    | Unlike a specific post                                                      |
 
+### Users
+
+| Method | Endpoint               | Description                                                                  |
+| ------ | ---------------------- | ---------------------------------------------------------------------------- |
+| GET    | /users/profile         | Get the profile of the logged-in user                                       |
+| PATCH  | /users/profile         | Update the profile of the logged-in user                                    |
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
