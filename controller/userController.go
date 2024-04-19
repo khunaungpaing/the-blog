@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jinzhu/gorm"
+	"github.com/khunaungpaing/the-blog-api/dto"
 	"github.com/khunaungpaing/the-blog-api/initializer"
 	"github.com/khunaungpaing/the-blog-api/models"
 	"golang.org/x/crypto/bcrypt"
@@ -129,7 +130,17 @@ func Login(c *gin.Context) {
 	})
 }
 
-// get User Profile
+// GetUserProfile returns the profile of the logged-in user.
+// @Summary Get user profile
+// @Description Returns the profile of the logged-in user.
+// @Tags Profile
+// @Security BearerAuth
+// @Produce json
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Success 200 {object} models.User "User profile"
+// @Failure 400 {object} gin.H "User not found in context"
+// @Failure 500 {object} gin.H "Failed to get user from context"
+// @Router /users/profile [get]
 func GetUserProfile(c *gin.Context) {
 	// Get the user from context
 	user, exist := c.Get("user")
@@ -144,10 +155,66 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	// Response user
-	userModel.Password = ""
+	userModel.Password = "" // Ensure password is not sent in response
 	c.JSON(http.StatusOK, userModel)
 }
 
+// UpdateUserProfile updates the profile of the logged-in user.
+// @Summary Update user profile
+// @Description Updates the profile of the logged-in user.
+// @Tags Profile
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Authorization token using the Bearer scheme"
+// @Param body body dto.RequestUser true "User object"
+// @Success 200 {object} models.User "Updated user profile"
+// @Failure 400 {object} gin.H "Invalid request"
+// @Failure 401 {object} gin.H "User not found in context"
+// @Failure 500 {object} gin.H "Failed to get user from context"
+// @Router /users/profile [patch]
 func UpdateUserProfile(c *gin.Context) {
+	var body dto.RequestUser
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid request"})
+		return
+	}
 
+	// Update user profile
+	user, exist := c.Get("user")
+	if !exist {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found in context"})
+		return
+	}
+	userModel, ok := user.(models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user from context"})
+		return
+	}
+
+	// Update user profile fields
+	userModel.Username = body.Username
+	userModel.Email = body.Email
+	userModel.Bio = body.Bio
+	userModel.ProfilePic = body.ProfilePic
+
+	// Hash the password if provided
+	if body.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Failed to hash password"})
+			return
+		}
+		userModel.Password = string(hash)
+	}
+
+	// Save the updated user profile
+	result := initializer.DB.Save(&userModel)
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": result.Error.Error()})
+		return
+	}
+
+	userModel.Password = "" // Ensure password is not sent in response
+	c.JSON(http.StatusOK, userModel)
 }

@@ -128,7 +128,7 @@ func DeleteComment(c *gin.Context) {
 // @Failure 400 {object} gin.H "Bad request, invalid request body"
 // @Failure 404 {object} gin.H "Comment not found"
 // @Failure 500 {object} gin.H "Internal server error"
-// @Router /posts/{postId}/comments/{commentId} [put]
+// @Router /posts/{postId}/comments/{commentId} [patch]
 func UpdateComment(c *gin.Context) {
 	var requestCmt dto.RequestComment
 	var updatedComment models.Comment

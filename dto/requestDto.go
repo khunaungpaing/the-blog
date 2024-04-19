@@ -87,3 +87,12 @@ func RequestTagToModelList(list []RequestTag) []models.Tag {
 	}
 	return tags
 }
+
+type RequestUser struct {
+	ID         uint   `json:"id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Bio        string `json:"bio"`
+	ProfilePic string `json:"profile_pic"`
+	Password   string `json:"password"`
+}

@@ -57,6 +57,21 @@ definitions:
       name:
         type: string
     type: object
+  dto.RequestUser:
+    properties:
+      bio:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      profile_pic:
+        type: string
+      username:
+        type: string
+    type: object
   gin.H:
     additionalProperties: {}
     type: object
@@ -178,6 +193,8 @@ definitions:
         type: string
       updatedAt:
         type: string
+      user:
+        $ref: '#/definitions/models.User'
       user_id:
         type: integer
     type: object
@@ -206,11 +223,6 @@ definitions:
       bio:
         description: Optional user bio
         type: string
-      comments:
-        description: Optional, One-to-Many relationship with Comment
-        items:
-          $ref: '#/definitions/models.Comment'
-        type: array
       createdAt:
         type: string
       deletedAt:
@@ -257,8 +269,8 @@ info:
     to streamline your development process and deliver a seamless user experience.
     Unlock the power of modern web development with The Blog API.
   license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
+    name: MIT
+    url: https://opensource.org/licenses/MIT
   title: The Blog API
   version: "1.0"
 paths:
@@ -302,6 +314,10 @@ paths:
         in: query
         name: pageSize
         type: integer
+      - description: Filter posts by author username
+        in: query
+        name: author
+        type: string
       produces:
       - application/json
       responses:
@@ -420,7 +436,7 @@ paths:
       summary: Retrieve a specific post
       tags:
       - posts
-    put:
+    patch:
       consumes:
       - application/json
       description: Update an existing post with the provided data.
@@ -580,7 +596,7 @@ paths:
       summary: Delete a comment
       tags:
       - comments
-    put:
+    patch:
       consumes:
       - application/json
       description: Updates the specified comment.
@@ -762,4 +778,73 @@ paths:
       summary: Sign up a new user
       tags:
       - users
+  /users/profile:
+    get:
+      description: Returns the profile of the logged-in user.
+      parameters:
+      - description: Authorization token using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: User not found in context
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Failed to get user from context
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - Profile
+    patch:
+      consumes:
+      - application/json
+      description: Updates the profile of the logged-in user.
+      parameters:
+      - description: Authorization token using the Bearer scheme
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User object
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RequestUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: User not found in context
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Failed to get user from context
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Profile
 swagger: "2.0"

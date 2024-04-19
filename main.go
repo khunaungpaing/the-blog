@@ -38,6 +38,12 @@ func main() {
 
 	// Initialize the version 1 of the API
 	v1 := r.Group("/api/v1")
+	{
+		v1.POST("/users/signup", controller.SignUp)
+		v1.POST("/users/login", controller.Login)
+		v1.GET("/users/profile", middleware.RequireAuth, controller.GetUserProfile)
+		v1.PATCH("/users", middleware.RequireAuth, controller.UpdateUserProfile)
+	}
 
 	// Initialize the posts endpoint
 	post := v1.Group("/posts")
@@ -51,7 +57,7 @@ func main() {
 		// Delete a specific post
 		post.DELETE("/:postId", middleware.RequireAuth, controller.DeletePost)
 		// Update a specific post
-		post.PUT("/:postId", middleware.RequireAuth, controller.UpdatePost)
+		post.PATCH("/:postId", middleware.RequireAuth, controller.UpdatePost)
 	}
 
 	// Initialize the comments endpoint for a specific post
@@ -64,7 +70,7 @@ func main() {
 		// Delete a specific comment for a specific post
 		postIdRoute.DELETE("/comments/:commentId", middleware.RequireAuth, controller.DeleteComment)
 		// Update a specific comment for a specific post
-		postIdRoute.PUT("/comments/:commentId", middleware.RequireAuth, controller.UpdateComment)
+		postIdRoute.PATCH("/comments/:commentId", middleware.RequireAuth, controller.UpdateComment)
 
 		// Like the comments endpoint
 		postIdRoute.POST("/likes", middleware.RequireAuth, controller.LikePost)
@@ -73,11 +79,6 @@ func main() {
 		// Unlike a specific post
 		postIdRoute.DELETE("/likes", middleware.RequireAuth, controller.UnlikePost)
 	}
-
-	v1.POST("/users/signup", controller.SignUp)
-	v1.POST("/users/login", controller.Login)
-	v1.GET("/users/profile", middleware.RequireAuth, controller.GetUserProfile)
-	v1.PUT("/users", middleware.RequireAuth, controller.UpdateUserProfile)
 
 	// Set the trusted proxies
 	r.SetTrustedProxies([]string{"127.0.0.1"})

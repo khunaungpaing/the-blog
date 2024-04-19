@@ -83,6 +83,7 @@ func GetPost(c *gin.Context) {
 }
 
 // GetPosts retrieves a list of posts with pagination.
+// If the author query parameter is provided, it filters posts by that author.
 // @Summary Retrieve a list of posts
 // @Description Retrieve a list of posts with pagination support.
 // @Tags posts
@@ -90,11 +91,12 @@ func GetPost(c *gin.Context) {
 // @Produce json
 // @Param page query int false "Page number (default: 1)"
 // @Param pageSize query int false "Number of items per page (default: 10)"
+// @Param author query string false "Filter posts by author username"
 // @Success 200 {object} gin.H "List of posts"
 // @Failure 500 {object} gin.H "Internal server error"
 // @Router /posts [get]
 func GetPosts(c *gin.Context) {
-	// Parse query parameters for pagination
+	// Parse query parameters for pagination and author filtering
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
 		page = 1
@@ -103,24 +105,30 @@ func GetPosts(c *gin.Context) {
 	if err != nil || pageSize < 1 {
 		pageSize = 10
 	}
+	author := c.Query("author")
 
 	// Calculate offset
 	offset := (page - 1) * pageSize
 
+	// Prepare DB query with or without author filtering
+	dbQuery := initializer.DB.Preload("Categories").Preload("Tags").Preload("Comments").Preload("Media").Preload("User").Offset(offset).Limit(pageSize)
+	if author != "" {
+		// If author is provided, filter posts by author
+		dbQuery = dbQuery.Where("user_id IN (SELECT id FROM users WHERE username = ?)", author)
+	}
+
 	// Fetch paginated posts with preloaded associations
 	var posts []models.Post
 	var totalPostsCount int64
-	if err := initializer.DB.Model(&models.Post{}).Count(&totalPostsCount).Error; err != nil {
+	if err := dbQuery.Model(&models.Post{}).Count(&totalPostsCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total posts count"})
 		return
 	}
-	if err := initializer.DB.Preload("Categories").Preload("Tags").Preload("Comments").Preload("Media").Preload("User").Offset(offset).Limit(pageSize).Find(&posts).Error; err != nil {
+	if err := dbQuery.Find(&posts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch posts"})
 		return
 	}
-	for _, post := range posts {
-		post.User.Password = ""
-	}
+
 	// Prepare response with pagination metadata
 	response := gin.H{
 		"posts":       posts,
@@ -147,7 +155,7 @@ func GetPosts(c *gin.Context) {
 // @Failure 403 {object} gin.H "Forbidden, user is not authorized to update this post"
 // @Failure 404 {object} gin.H "Post not found"
 // @Failure 500 {object} gin.H "Internal server error"
-// @Router /posts/{postId} [put]
+// @Router /posts/{postId} [patch]
 func UpdatePost(c *gin.Context) {
 	// Get the post ID from the URL parameter
 	id := c.Param("postId")
@@ -189,15 +197,12 @@ func UpdatePost(c *gin.Context) {
 
 	// Save the updated post
 	if err := initializer.DB.Save(&post).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update post"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Return the updated post
-	c.JSON(http.StatusOK, gin.H{
-		"post":    post,
-		"updated": requestPost,
-	})
+	c.JSON(http.StatusOK, post)
 }
 
 // DeletePost deletes a specific post by ID.
