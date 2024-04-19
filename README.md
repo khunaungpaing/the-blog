@@ -43,7 +43,7 @@ make run
 ```
 6. Visit the API documentation at http://localhost:8080/swagger/index.html.
 
-Note: You may need to adjust the PORT configuration in your main.go file if your server runs on a different port.
+Note: You may need to adjust the PORT configuration in your `.env` file if your server runs on a different port.
 
 ## Makefile Commands
 1. `make run`: Compile and run the application.
