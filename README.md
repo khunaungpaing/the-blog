@@ -83,6 +83,3 @@ Note: You may need to adjust the PORT configuration in your `.env` file if your 
 | GET    | /users/profile         | Get the profile of the logged-in user                                       |
 | PATCH  | /users/profile         | Update the profile of the logged-in user                                    |
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
